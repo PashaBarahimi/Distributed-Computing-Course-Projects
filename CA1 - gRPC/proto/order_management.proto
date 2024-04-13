@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "dist-grpc/pkg/proto";
+
+message Request {
+  string query = 1;
+}
+
+message Response {
+  repeated string results = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+
+service OrderManagement {
+  rpc GetOrderUnary(Request) returns (Response) {}
+  rpc GetOrderServerStream(Request) returns (stream Response) {}
+  rpc GetOrderClientStream(stream Request) returns (Response) {}
+  rpc GetOrderBiDiStream(stream Request) returns (stream Response) {}
+}

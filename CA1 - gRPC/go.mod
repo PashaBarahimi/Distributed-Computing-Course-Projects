@@ -1,3 +1,3 @@
-module CA1_-_gRPC
+module dist-grpc
 
 go 1.22
