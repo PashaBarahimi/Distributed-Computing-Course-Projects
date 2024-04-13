@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "dist-grpc/pkg/proto";
+option go_package = "pkg/proto";
 
 message Request {
   string query = 1;
