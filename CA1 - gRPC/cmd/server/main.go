@@ -8,13 +8,13 @@ import (
 	"net"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"dist-grpc/pkg/matcher"
 	pb "dist-grpc/pkg/proto"
 	"dist-grpc/pkg/utils"
-	"github.com/charmbracelet/log"
 )
 
 func init() {
