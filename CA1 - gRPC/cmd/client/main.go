@@ -33,7 +33,7 @@ func printResponse(res *pb.Response) {
 
 func getOrderUnary(client pb.OrderManagementClient, query string) {
 	log.Infof("Sending query as unary RPC: %s", query)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	req := pb.Request{Query: query}
@@ -47,7 +47,7 @@ func getOrderUnary(client pb.OrderManagementClient, query string) {
 
 func getOrderServerStream(client pb.OrderManagementClient, query string) {
 	log.Infof("Sending query as server stream RPC: %s", query)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	req := pb.Request{Query: query}
@@ -203,7 +203,6 @@ func bidirectionalStreamRPC(client pb.OrderManagementClient) {
 		close(queryChan)
 	}()
 	GetOrderBiDiStream(client, queryChan)
-
 }
 
 func launchMenu(client pb.OrderManagementClient) {
