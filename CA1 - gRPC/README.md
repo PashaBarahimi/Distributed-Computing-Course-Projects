@@ -669,7 +669,7 @@ func GetOrderBiDiStream(client pb.OrderManagementClient, queryChan chan string) 
     }()
 
     for query := range queryChan {
-        log.Printf("Sending query: %s", query)
+        log.Infof("Sending query: %s", query)
         if err := stream.Send(&pb.Request{Query: query}); err != nil {
             log.Fatalf("Failed to send request: %v", err)
         }
