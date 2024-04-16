@@ -1,33 +1,37 @@
 # CA1 - gRPC
 
 - [CA1 - gRPC](#ca1---grpc)
-	- [Introduction](#introduction)
-	- [Requirements](#requirements)
-	- [Description](#description)
-		- [Proto](#proto)
-			- [Protobuf Messages](#protobuf-messages)
-			- [gRPC Services](#grpc-services)
-			- [Compilation](#compilation)
-		- [Application Structure](#application-structure)
-			- [Order Matcher](#order-matcher)
-			- [Server](#server)
-				- [Command-line Arguments](#command-line-arguments)
-				- [Listening \& Serving](#listening--serving)
-				- [gRPC](#grpc)
-				- [GetOrderUnary](#getorderunary)
-				- [GetOrderServerStream](#getorderserverstream)
-				- [GetOrderClientStream](#getorderclientstream)
-				- [GetOrderBiDiStream](#getorderbidistream)
-			- [Client](#client)
-				- [Command-line Arguments](#command-line-arguments-1)
-				- [Dialing](#dialing)
-				- [Menu](#menu)
-				- [Unary RPC](#unary-rpc)
-				- [Server Streaming RPC](#server-streaming-rpc)
-				- [Client Streaming RPC](#client-streaming-rpc)
-				- [Bidirectional Streaming RPC](#bidirectional-streaming-rpc)
-	- [Comparison of gRPC methods](#comparison-of-grpc-methods)
-	- [Task Division](#task-division)
+  - [Introduction](#introduction)
+  - [Requirements](#requirements)
+  - [Description](#description)
+    - [Proto](#proto)
+      - [Protobuf Messages](#protobuf-messages)
+      - [gRPC Services](#grpc-services)
+      - [Compilation](#compilation)
+    - [Application Structure](#application-structure)
+      - [Order Matcher](#order-matcher)
+      - [Server](#server)
+        - [Command-line Arguments](#command-line-arguments)
+        - [Listening \& Serving](#listening--serving)
+        - [gRPC](#grpc)
+        - [GetOrderUnary](#getorderunary)
+        - [GetOrderServerStream](#getorderserverstream)
+        - [GetOrderClientStream](#getorderclientstream)
+        - [GetOrderBiDiStream](#getorderbidistream)
+      - [Client](#client)
+        - [Command-line Arguments](#command-line-arguments-1)
+        - [Dialing](#dialing)
+        - [Menu](#menu)
+        - [Unary RPC](#unary-rpc)
+        - [Server Streaming RPC](#server-streaming-rpc)
+        - [Client Streaming RPC](#client-streaming-rpc)
+        - [Bidirectional Streaming RPC](#bidirectional-streaming-rpc)
+  - [Comparison of gRPC methods](#comparison-of-grpc-methods)
+    - [Use Cases](#use-cases)
+    - [Performance](#performance)
+    - [Implementation](#implementation)
+    - [Summary](#summary)
+  - [Task Division](#task-division)
 
 ## Introduction
 
@@ -708,32 +712,108 @@ func bidirectionalStreamRPC(client pb.OrderManagementClient) {
 
 ## Comparison of gRPC methods
 
-The 4 gRPC communication patterns are compared below:
+### Use Cases
 
 - Unary RPC
-  - The client sends a single request to the server and receives a single response.
-  - The client waits for the server to process the request and send a response.
-  - The client can send multiple requests but each request is processed sequentially.
+  - It's similar to a traditional synchronous function call, where the client
+    sends a single request to the server and waits for a single response. 
+  - Suitable for use cases where a single request and response are sufficient,
+    such as fetching user data or performing simple operations.
+  
 - Server Streaming RPC
-  - The client sends a single request to the server and receives multiple responses.
-  - The client waits for the server to process the request and send multiple responses.
-  - The client can send multiple requests but each request is processed sequentially.
+  - In this pattern, the client sends a single request to the server, but the
+    server responds with a stream of messages.
+  - The server sends multiple messages asynchronously, and the client reads them
+    as they arrive.
+  - Useful for scenarios where the server needs to push a potentially large
+    amount of data to the client, like sending real-time updates or a sequence
+    of events.
+
 - Client Streaming RPC
-  - The client sends multiple requests to the server and receives a single response.
-  - The client can send multiple requests concurrently.
-  - The server waits for all the requests to be received before processing them and sending a response.
+  - Here, the client sends a stream of messages to the server, and the server
+    responds with a single message.
+  - The client sends multiple messages asynchronously, and the server processes
+    them as they arrive.
+  - Appropriate for cases where the client needs to send a large amount of data
+    to the server in chunks, like uploading a file or sending telemetry data.
+
 - Bidirectional Streaming RPC
-  - The client sends multiple requests to the server and receives multiple responses.
-  - The client can send multiple requests concurrently.
-  - The server processes each request as it is received and sends a response.
+  - This pattern allows both the client and server to send a stream of messages
+    to each other.
+  - The client and server can independently initiate sending messages and read
+    messages from the other side.
+  - Ideal for scenarios where both the client and server need to send and
+    receive a continuous flow of data, such as chat applications, real-time
+    collaboration tools, or multiplayer games.
 
-The choice of communication pattern depends on the requirements of the application.
+### Performance
 
-- Unary RPC is suitable for simple request-response interactions.
-- Server Streaming RPC is suitable for scenarios where the server needs to send multiple responses to a single request.
-- Client Streaming RPC is suitable for scenarios where the client needs to send multiple requests to the server and receive a single response.
-- Bidirectional Streaming RPC is suitable for scenarios where the client and server need to send multiple requests and responses concurrently.
+- Unary RPC typically utilizes a single request-response connection.
+  After the request is sent and the response is received, the connection is
+  closed. This can lead to frequent opening and closing of connections,
+  especially in scenarios with high request rates.
+- Server streaming RPC utilizes a single connection for sending multiple
+  responses to a single client request. Once the request is made, the connection
+  remains open until all responses are sent. This reduces the overhead of
+  connection establishment compared to unary RPC.
+- Client streaming RPC utilizes a single connection for receiving multiple
+  client messages and sending a single response. Similar to server streaming
+  RPC, the connection remains open until the client completes sending all
+  messages.
+- Bidirectional streaming RPC utilizes a single connection for both sending and
+  receiving messages between the client and server. This enables efficient
+  bidirectional communication over a single connection.
+
+### Implementation
+
+- Unary RPC is generally the simplest to implement among gRPC patterns. It
+  follows a straightforward request-response model similar to traditional
+  synchronous function calls.
+- Server streaming RPC introduces additional complexity compared to unary RPC
+  due to its asynchronous nature. However, it is still relatively
+  straightforward to implement.
+- Client streaming RPC is slightly more complex to implement compared to unary
+  RPC due to its asynchronous nature and the need to handle multiple client
+  messages.
+- Bidirectional streaming RPC is the most complex to implement among gRPC
+  patterns due to its bidirectional nature and concurrent message exchange. It's
+  obvious that it's a mixture of the latter two patterns and therefore is harder
+  to implement. Not to mention that both ends are performing concurrently, while
+  in the other methods only one of the server or client were performing
+  concurrently.
+
+### Summary
+
+- Unary RPC is suitable for simple request-response interactions. This can be
+  useful in applications with small to medium sized data. the advantage of this
+  method is that it's very simple to implement.
+- Server Streaming RPC is suitable for scenarios where the server needs to send
+  multiple responses to a single request. this can come in handy when the client
+  needs to get the data ASAP and perform operations on chunks of the received
+  stream data. In this case client can perform faster specially if the server is
+  too busy.
+- Client Streaming RPC is suitable for scenarios where the client needs to send
+  multiple requests to the server and receive a single response. Overall, client
+  streaming RPC is beneficial when the client-side data is produced
+  incrementally or in a stream-like fashion and needs to be processed or stored
+  on the server side. It allows for efficient utilization of network resources
+  and supports scenarios where the size or volume of client-side data may vary
+  dynamically.
+- Bidirectional Streaming RPC is suitable for scenarios where the client and
+  server need to send multiple requests and responses concurrently. Overall,
+  bidirectional streaming RPC is beneficial in scenarios where continuous,
+  bidirectional communication is required between the client and server,
+  enabling real-time interaction, data synchronization, event streaming, and
+  collaborative workflows. It offers flexibility, efficiency, and low latency,
+  making it suitable for a wide range of interactive and real-time applications.
 
 ## Task Division
 
-We implemented all the 4 methods of gRPC communication patterns to further understand how gRPC works.
+We implemented all the 4 methods of gRPC communication patterns to further
+understand how gRPC works. Here's how we divided the tasks:
+
+- Ali: Bidirectional pattern for both server and client
+- Pasha: Unary pattern for both server and client, Proto messages and services, README: Description/Proto
+- Misagh: Client stream pattern for both server and client, README: Description/Application Structure
+- Saman: Server stream pattern for both server and client, README: Introduction,
+  README: Requirements, README: Comparison of gRPC methods
