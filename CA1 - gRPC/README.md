@@ -4,6 +4,7 @@
   - [Introduction](#introduction)
   - [Requirements](#requirements)
   - [Description](#description)
+  - [How to Run](#how-to-run)
     - [Proto](#proto)
       - [Protobuf Messages](#protobuf-messages)
       - [gRPC Services](#grpc-services)
@@ -57,6 +58,12 @@ After installing `protoc`, we need to install the `protoc-gen-go` and `protoc-ge
 ```bash
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+```
+
+## How to Run
+```bash
+go run cmd/server/main.go
+go run cmd/client/main.go
 ```
 
 ## Description
@@ -812,8 +819,10 @@ func bidirectionalStreamRPC(client pb.OrderManagementClient) {
 We implemented all the 4 methods of gRPC communication patterns to further
 understand how gRPC works. Here's how we divided the tasks:
 
-- Ali: Bidirectional pattern for both server and client
-- Pasha: Unary pattern for both server and client, Proto messages and services, README: Description/Proto
-- Misagh: Client stream pattern for both server and client, README: Description/Application Structure
-- Saman: Server stream pattern for both server and client, README: Introduction,
-  README: Requirements, README: Comparison of gRPC methods
+- Ali: Unary RPC server & client, README: Application Structure/Unary RPC, Proto Definition, Client CLI, README: How-to-run
+
+- Saman: Client Stream RPC server & client, README: Application Structure/Client Stream RPC, README: Proto, Logging, README: Comparisons
+
+- Misagh: Server Stream RPC server & client, README: Application Structure/Server Stream RPC, README: Introduction, README: Other Appliction Structure Parts
+
+- Pasha: Bidirectional Stream RPC server & client, README: Application Structure/Bidirectional Stream RPC, README: Requirements, README: Description
