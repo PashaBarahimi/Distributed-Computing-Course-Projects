@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"dist-concurrency/pkg/event"
-	
+
+	"github.com/charmbracelet/log"
 	"github.com/google/uuid"
 )
 
 type TicketService struct {
-	events sync.Map
+	events  sync.Map
+	tickets sync.Map
 }
 
 func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets int) (*event.Event, error) {
@@ -33,10 +35,14 @@ func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets i
 func (ts *TicketService) ListEvents() []*event.Event {
 	var events []*event.Event
 	ts.events.Range(func(key, value interface{}) bool {
-		e := value.(*event.Event)
+		e, ok := value.(*event.Event)
+		if !ok {
+			log.Errorf("invalid event: %v", value)
+		}
 		events = append(events, e)
 		return true
 	})
+	log.Infof("Listing %d events", len(events))
 	return events
 }
 
@@ -48,17 +54,17 @@ func (ts *TicketService) BookTickets(eventID string, numTickets int) ([]string, 
 		return nil, fmt.Errorf("event not found")
 	}
 
-	ev := e.(*event.Event)
+	ev, ok := e.(*event.Event)
+	if !ok {
+		return nil, fmt.Errorf("invalid event")
+	}
 	if ev.AvailableTickets < numTickets {
 		return nil, fmt.Errorf("not enough tickets available")
 	}
 
 	var ticketIDs []string
 	for i := 0; i < numTickets; i++ {
-		id, err := uuid.NewUUID()
-		if err != nil {
-			return nil, err
-		}
+		id := uuid.New()
 
 		ticketID := id.String()
 		ticketIDs = append(ticketIDs, ticketID)
@@ -67,6 +73,12 @@ func (ts *TicketService) BookTickets(eventID string, numTickets int) ([]string, 
 
 	ev.AvailableTickets -= numTickets
 	ts.events.Store(eventID, ev) // FIXME: do we need to do this?
+	log.Infof("Booked %d tickets for event %s", numTickets, ev.Name)
+
+	for _, ticketID := range ticketIDs {
+		log.Infof("Storing ticket %s for event %s", ticketID, ev.Name)
+		ts.tickets.Store(ticketID, eventID)
+	}
 
 	return ticketIDs, nil
 }

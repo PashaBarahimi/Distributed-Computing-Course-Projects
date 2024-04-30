@@ -3,9 +3,9 @@ package event
 import "time"
 
 type Event struct {
-	ID               string
-	Name             string
-	Date             time.Time
-	TotalTickets     int
-	AvailableTickets int
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	Date             time.Time `json:"date"`
+	TotalTickets     int       `json:"totalTickets"`
+	AvailableTickets int       `json:"availableTickets"`
 }

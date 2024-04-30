@@ -1,6 +1,6 @@
 package ticket
 
 type Ticket struct {
-	ID      string
-	EventID string
+	ID      string `json:"id"`
+	EventID string `json:"eventId"`
 }
