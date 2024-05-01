@@ -125,10 +125,7 @@ The implementation of the `CreateEvent`, `ListEvents`, and `BookTickets` methods
 
 ```go
 func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets int) (*event.Event, error) {
-    id, err := uuid.NewUUID()
-    if err != nil {
-        return nil, err
-    }
+    id := uuid.New()
     e := &event.Event{
         ID:               id.String(),
         Name:             name,
@@ -773,9 +770,29 @@ Client Logs:
 
 ## Task Division
 
-TODO
-
-- Saman Eslami:
-- Pasha Barahimi:
-- Ali Padyav:
-- Misagh Mohaghegh:
+| Task                            | Assigned To |
+| ------------------------------- | ----------- |
+| Server CLI                      | Pasha       |
+| Client CLI                      | Saman       |
+| HTTP Server                     | Ali         |
+| HTTP Client                     | Misagh      |
+| Data Consistency                | Pasha       |
+| Error Handling                  | Saman       |
+| Logging                         | Ali         |
+| Caching                         | Misagh      |
+| Resource Management (Semaphore) | Saman       |
+| Data Exchange Protocol          | Ali         |
+| Critical Sections               | Pasha       |
+| README: Data Structures         | Misagh      |
+| README: Caching                 | Misagh      |
+| README: Description             | Misagh      |
+| README: Results                 | Misagh      |
+| README: Introduction            | Pasha       |
+| README: Concurrency Control     | Pasha       |
+| README: Interfaces              | Pasha       |
+| README: Communication Protocol  | Ali         |
+| README: Reservation System      | Ali         |
+| README: Resource Management     | Ali         |
+| README: Fairness                | Saman       |
+| README: Logging                 | Saman       |
+| README: Error Handling          | Saman       |

@@ -26,10 +26,7 @@ func New() *TicketService {
 }
 
 func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets int) (*event.Event, error) {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return nil, err
-	}
+	id := uuid.New()
 	e := &event.Event{
 		ID:               id.String(),
 		Name:             name,
