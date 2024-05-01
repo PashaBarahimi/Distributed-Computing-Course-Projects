@@ -45,7 +45,7 @@ var (
 
 	logBuffer = strings.Builder{}
 
-	service = ticketservice.TicketService{}
+	service = ticketservice.New()
 
 	host string
 	port int

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"dist-concurrency/pkg/cache"
 	"dist-concurrency/pkg/event"
 
 	"github.com/charmbracelet/log"
@@ -15,6 +16,13 @@ type TicketService struct {
 	events  sync.Map
 	tickets sync.Map
 	mu      sync.RWMutex
+	cache   *cache.Cache
+}
+
+func New() *TicketService {
+	ts := &TicketService{}
+	ts.cache = cache.New(&ts.events, &ts.mu, 10)
+	return ts
 }
 
 func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets int) (*event.Event, error) {
@@ -54,18 +62,15 @@ func (ts *TicketService) ListEvents() []*event.Event {
 }
 
 func (ts *TicketService) BookTickets(eventID string, numTickets int) ([]string, error) {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-
-	e, ok := ts.events.Load(eventID)
-	if !ok {
+	e := ts.cache.GetEvent(eventID)
+	if e == nil {
 		return nil, fmt.Errorf("event not found")
 	}
 
-	ev, ok := e.(*event.Event)
-	if !ok {
-		return nil, fmt.Errorf("invalid event")
-	}
+	e.Mu.Lock()
+	defer e.Mu.Unlock()
+	ev := e.Event
+
 	if ev.AvailableTickets < numTickets {
 		return nil, fmt.Errorf("not enough tickets available")
 	}
@@ -75,7 +80,6 @@ func (ts *TicketService) BookTickets(eventID string, numTickets int) ([]string, 
 		id := uuid.New()
 		ticketID := id.String()
 		ticketIDs = append(ticketIDs, ticketID)
-		// TODO: store the ticket in a separate data structure if needed
 	}
 
 	ev.AvailableTickets -= numTickets
