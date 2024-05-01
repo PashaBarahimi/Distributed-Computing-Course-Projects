@@ -32,7 +32,7 @@ const (
 	defaultHost = "127.0.0.1"
 	defaultPort = 8080
 
-	rateLimit = 1
+	rateLimit = 100
 
 	listEventsPath     = "/events"
 	reserveTicketsPath = "/reserve"
