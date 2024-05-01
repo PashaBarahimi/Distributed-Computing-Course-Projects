@@ -499,7 +499,65 @@ To ensure fairness, we need to ensure that the resources are shared fairly among
 
 #### Resource Management
 
-TODO
+For the resource management and preventing the resource exhaustion, we need to limit the number of requests that can be handled by the server concurrently. We can use the `MaxConcurrentRequests` field in the `http.Server` struct to limit the number of concurrent requests that can be handled by the server. However, we have implemented a `Semaphore` using a buffered channel to limit the number of concurrent requests that can be handled by the server. This struct is implemented as follows:
+
+```go
+type Semaphore struct {
+    sem chan struct{}
+}
+```
+
+The `Semaphore` struct has a `sem` buffered channel that is used to limit the number of concurrent requests that can be handled by the server. The `Semaphore` struct has the following methods:
+
+```go
+func New(n int) *Semaphore {
+    return &Semaphore{sem: make(chan struct{}, n)}
+}
+
+func (s *Semaphore) Acquire() {
+    s.sem <- struct{}{}
+}
+
+func (s *Semaphore) Release() {
+    <-s.sem
+}
+
+func (s *Semaphore) TryAcquire() bool {
+    select {
+    case s.sem <- struct{}{}:
+        return true
+    default:
+        return false
+    }
+}
+```
+
+The `New` function creates a new `Semaphore` with the given number of concurrent requests that can be handled by the server. The `Acquire` method acquires a resource from the `Semaphore` and blocks if the `Semaphore` is full. The `Release` method releases a resource back to the `Semaphore`. The `TryAcquire` method tries to acquire a resource from the `Semaphore` without blocking and returns `true` if the resource is acquired and `false` if the `Semaphore` is full.
+
+Then, we can use the `Semaphore` in the `http.Handler` to limit the number of concurrent requests that can be handled by the server:
+
+```go
+func isRateLimited() bool {
+    if !limitSem.TryAcquire() {
+        log.Warn("Rate limited")
+        return true
+    }
+    return false
+}
+
+func handlerFunc(w http.ResponseWriter, r *http.Request) {
+    if isRateLimited() {
+        w.WriteHeader(http.StatusTooManyRequests)
+        log.Debugf("Response: %v", http.StatusTooManyRequests)
+        return
+    }
+    defer limitSem.Release()
+
+    // handle the request
+}
+```
+
+We could have also used the 'golang.org/x/sync/semaphore' package to implement the `Semaphore` struct, but we decided to implement it ourselves to show how it can be done.
 
 ### Logging and Error Handling
 
@@ -662,7 +720,56 @@ go run ./cmd/client
 
 ## Results
 
-TODO
+Progress Bar:
+
+![Progress Bar](assets/progress_bar.png)
+
+Server Menu:
+
+![Server Menu](assets/server_menu.png)
+
+Adding Event:
+
+![Adding Event](assets/adding_event.png)
+
+Retrieving Events in Server:
+
+![Events Server](assets/events_server.png)
+
+Client Menu:
+
+![Client Menu](assets/client_menu.png)
+
+Listing Events in Client:
+
+![Events Client](assets/events_client.png)
+
+Rate Limit Exceeded (limit is 1):
+
+![Rate Limit Exceeded](assets/rate_limit.png)
+
+Booking Tickets:
+
+![Ticket Booking](assets/ticket_booking.png)
+
+Booking Results:
+
+![Booking Results](assets/booking_results.png)
+
+Data Consistency (2 clients booking tickets concurrently):
+
+![Data Consistency 1](assets/data_consistency_1.png)
+![Data Consistency 2](assets/data_consistency_2.png)
+![Data Consistency 3](assets/data_consistency_3.png)
+![Data Consistency 4](assets/data_consistency_4.png)
+
+Server Logs:
+
+![Server Logs](assets/server_logs.png)
+
+Client Logs:
+
+![Client Logs](assets/client_logs.png)
 
 ## Task Division
 
