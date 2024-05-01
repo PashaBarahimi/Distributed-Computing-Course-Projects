@@ -10,13 +10,14 @@ import (
 	"dist-concurrency/pkg/ticketservice"
 	"encoding/json"
 	"flag"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fatih/color"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/fatih/color"
 
 	"github.com/charmbracelet/log"
 )
@@ -57,12 +58,7 @@ func init() {
 	log.SetOutput(&logBuffer)
 }
 
-func listEvents(w http.ResponseWriter, r *http.Request) {
-	log.Info("Listing events...")
-	events := service.ListEvents()
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	body, _ := json.Marshal(events)
+func writeBody(w http.ResponseWriter, body []byte) {
 	write, err := w.Write(body)
 	if err != nil {
 		log.Errorf("Error writing response: %v", err)
@@ -70,8 +66,17 @@ func listEvents(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("Response: %v", http.StatusInternalServerError)
 	} else {
 		log.Debugf("Wrote %d bytes", write)
-		log.Debugf("Response: %v", http.StatusOK)
 	}
+}
+
+func listEvents(w http.ResponseWriter, r *http.Request) {
+	log.Info("Listing events...")
+	events := service.ListEvents()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	body, _ := json.Marshal(events)
+	writeBody(w, body)
+	log.Debugf("Response: %v", http.StatusOK)
 	time.Sleep(time.Second)
 }
 
@@ -82,6 +87,8 @@ func reserveTickets(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Errorf("Error parsing tickets: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		body := []byte(err.Error())
+		writeBody(w, body)
 		log.Debugf("Response: %v", http.StatusBadRequest)
 		return
 	}
@@ -89,23 +96,18 @@ func reserveTickets(w http.ResponseWriter, r *http.Request) {
 	ticketIDs, err := service.BookTickets(eventID, numTickets)
 	if err != nil {
 		log.Errorf("Error booking tickets: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Debugf("Response: %v", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusTeapot)
+		body := []byte(err.Error())
+		writeBody(w, body)
+		log.Debugf("Response: %v", http.StatusTeapot)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	body, _ := json.Marshal(ticketIDs)
-	write, err := w.Write(body)
-	if err != nil {
-		log.Errorf("Error writing response: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Debugf("Response: %v", http.StatusInternalServerError)
-	} else {
-		log.Debugf("Wrote %d bytes", write)
-		log.Debugf("Response: %v", http.StatusOK)
-	}
+	writeBody(w, body)
+	log.Debugf("Response: %v", http.StatusOK)
 	time.Sleep(time.Second)
 }
 

@@ -69,7 +69,18 @@ func sendHttpRequest(req *http.Request) (resp *http.Response, err error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP request failed with status code %s", resp.Status)
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				log.Errorf("Error closing response body: %v", err)
+			}
+		}(resp.Body)
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("")
+		}
+		return nil, fmt.Errorf("HTTP request failed with status code %s | %s", resp.Status, body)
 	}
 	return resp, nil
 }
