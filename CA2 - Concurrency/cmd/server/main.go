@@ -1,14 +1,6 @@
 package main
 
 import (
-	"dist-concurrency/pkg/cli/eventcreator"
-	"dist-concurrency/pkg/cli/eventlist"
-	"dist-concurrency/pkg/cli/logport"
-	"dist-concurrency/pkg/cli/mainmenu"
-	"dist-concurrency/pkg/cli/progressbar"
-	"dist-concurrency/pkg/event"
-	"dist-concurrency/pkg/semaphore"
-	"dist-concurrency/pkg/ticketservice"
 	"encoding/json"
 	"flag"
 	"net/http"
@@ -17,10 +9,18 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fatih/color"
+	"dist-concurrency/pkg/cli/eventcreator"
+	"dist-concurrency/pkg/cli/eventlist"
+	"dist-concurrency/pkg/cli/logport"
+	"dist-concurrency/pkg/cli/mainmenu"
+	"dist-concurrency/pkg/cli/progressbar"
+	"dist-concurrency/pkg/event"
+	"dist-concurrency/pkg/semaphore"
+	"dist-concurrency/pkg/ticketservice"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/fatih/color"
 )
 
 const (
@@ -78,6 +78,7 @@ func isRateLimited() bool {
 		log.Warn("Rate limited")
 		return true
 	}
+	log.Debug("Not rate limited")
 	return false
 }
 
@@ -105,7 +106,6 @@ func reserveTickets(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("Response: %v", http.StatusTooManyRequests)
 		return
 	}
-	limitSem.Acquire()
 	defer limitSem.Release()
 
 	log.Info("Reserving tickets...")
