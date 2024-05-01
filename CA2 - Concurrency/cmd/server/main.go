@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"dist-concurrency/pkg/cli/eventcreator"
 	"dist-concurrency/pkg/cli/eventlist"
 	"dist-concurrency/pkg/cli/logport"
@@ -18,6 +19,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/charmbracelet/log"
 )
@@ -30,6 +32,8 @@ const (
 
 	defaultHost = "127.0.0.1"
 	defaultPort = 8080
+
+	rateLimit = 1
 
 	listEventsPath     = "/events"
 	reserveTicketsPath = "/reserve"
@@ -45,7 +49,8 @@ var (
 
 	logBuffer = strings.Builder{}
 
-	service = ticketservice.New()
+	service  = ticketservice.New()
+	limitSem = semaphore.NewWeighted(rateLimit)
 
 	host string
 	port int
@@ -69,7 +74,23 @@ func writeBody(w http.ResponseWriter, body []byte) {
 	}
 }
 
+func isRateLimited() bool {
+	if !limitSem.TryAcquire(1) {
+		log.Warn("Rate limited")
+		return true
+	}
+	return false
+}
+
 func listEvents(w http.ResponseWriter, r *http.Request) {
+	if isRateLimited() {
+		w.WriteHeader(http.StatusTooManyRequests)
+		log.Debugf("Response: %v", http.StatusTooManyRequests)
+		return
+	}
+	limitSem.Acquire(context.Background(), 1)
+	defer limitSem.Release(1)
+
 	log.Info("Listing events...")
 	events := service.ListEvents()
 	w.Header().Set("Content-Type", "application/json")
@@ -81,6 +102,14 @@ func listEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func reserveTickets(w http.ResponseWriter, r *http.Request) {
+	if isRateLimited() {
+		w.WriteHeader(http.StatusTooManyRequests)
+		log.Debugf("Response: %v", http.StatusTooManyRequests)
+		return
+	}
+	limitSem.Acquire(context.Background(), 1)
+	defer limitSem.Release(1)
+
 	log.Info("Reserving tickets...")
 	eventID := r.URL.Query().Get("eventId")
 	numTickets, err := strconv.Atoi(r.URL.Query().Get("tickets"))
