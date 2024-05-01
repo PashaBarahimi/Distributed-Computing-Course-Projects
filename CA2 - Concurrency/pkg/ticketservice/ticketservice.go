@@ -14,6 +14,7 @@ import (
 type TicketService struct {
 	events  sync.Map
 	tickets sync.Map
+	mu      sync.RWMutex
 }
 
 func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets int) (*event.Event, error) {
@@ -28,12 +29,16 @@ func (ts *TicketService) CreateEvent(name string, date time.Time, totalTickets i
 		TotalTickets:     totalTickets,
 		AvailableTickets: totalTickets,
 	}
+	ts.mu.Lock()
 	ts.events.Store(e.ID, e)
+	ts.mu.Unlock()
 	return e, nil
 }
 
 func (ts *TicketService) ListEvents() []*event.Event {
 	var events []*event.Event
+	ts.mu.RLock()
+
 	ts.events.Range(func(key, value interface{}) bool {
 		e, ok := value.(*event.Event)
 		if !ok {
@@ -42,12 +47,15 @@ func (ts *TicketService) ListEvents() []*event.Event {
 		events = append(events, e)
 		return true
 	})
+
+	ts.mu.RUnlock()
 	log.Infof("Listing %d events", len(events))
 	return events
 }
 
 func (ts *TicketService) BookTickets(eventID string, numTickets int) ([]string, error) {
-	// TODO: implement concurrency control
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
 
 	e, ok := ts.events.Load(eventID)
 	if !ok {
@@ -65,14 +73,12 @@ func (ts *TicketService) BookTickets(eventID string, numTickets int) ([]string, 
 	var ticketIDs []string
 	for i := 0; i < numTickets; i++ {
 		id := uuid.New()
-
 		ticketID := id.String()
 		ticketIDs = append(ticketIDs, ticketID)
 		// TODO: store the ticket in a separate data structure if needed
 	}
 
 	ev.AvailableTickets -= numTickets
-	ts.events.Store(eventID, ev) // FIXME: do we need to do this?
 	log.Infof("Booked %d tickets for event %s", numTickets, ev.Name)
 
 	for _, ticketID := range ticketIDs {
