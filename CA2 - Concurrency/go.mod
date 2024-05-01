@@ -5,13 +5,13 @@ go 1.22
 require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.10.0
+	github.com/charmbracelet/log v0.4.0
 	github.com/fatih/color v1.16.0
 	github.com/google/uuid v1.6.0
 )
 
 require (
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
-	github.com/charmbracelet/log v0.4.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect

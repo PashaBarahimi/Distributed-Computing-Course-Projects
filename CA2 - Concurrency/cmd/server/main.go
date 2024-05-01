@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
 	"dist-concurrency/pkg/cli/eventcreator"
 	"dist-concurrency/pkg/cli/eventlist"
 	"dist-concurrency/pkg/cli/logport"
 	"dist-concurrency/pkg/cli/mainmenu"
 	"dist-concurrency/pkg/cli/progressbar"
 	"dist-concurrency/pkg/event"
+	"dist-concurrency/pkg/semaphore"
 	"dist-concurrency/pkg/ticketservice"
 	"encoding/json"
 	"flag"
@@ -19,7 +19,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/charmbracelet/log"
 )
@@ -50,7 +49,7 @@ var (
 	logBuffer = strings.Builder{}
 
 	service  = ticketservice.New()
-	limitSem = semaphore.NewWeighted(rateLimit)
+	limitSem = semaphore.New(rateLimit)
 
 	host string
 	port int
@@ -75,7 +74,7 @@ func writeBody(w http.ResponseWriter, body []byte) {
 }
 
 func isRateLimited() bool {
-	if !limitSem.TryAcquire(1) {
+	if !limitSem.TryAcquire() {
 		log.Warn("Rate limited")
 		return true
 	}
@@ -88,8 +87,7 @@ func listEvents(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("Response: %v", http.StatusTooManyRequests)
 		return
 	}
-	limitSem.Acquire(context.Background(), 1)
-	defer limitSem.Release(1)
+	defer limitSem.Release()
 
 	log.Info("Listing events...")
 	events := service.ListEvents()
@@ -107,8 +105,8 @@ func reserveTickets(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("Response: %v", http.StatusTooManyRequests)
 		return
 	}
-	limitSem.Acquire(context.Background(), 1)
-	defer limitSem.Release(1)
+	limitSem.Acquire()
+	defer limitSem.Release()
 
 	log.Info("Reserving tickets...")
 	eventID := r.URL.Query().Get("eventId")
