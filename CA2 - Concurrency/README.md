@@ -1,6 +1,6 @@
-# Concurrent Ticket Reservation System
+# CA2 - Concurrent Ticket Reservation System
 
-- [Concurrent Ticket Reservation System](#concurrent-ticket-reservation-system)
+- [CA2 - Concurrent Ticket Reservation System](#ca2---concurrent-ticket-reservation-system)
   - [Team Members](#team-members)
   - [Introduction](#introduction)
   - [Description](#description)
